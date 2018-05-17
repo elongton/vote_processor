@@ -8,16 +8,15 @@
 #     a. Same book
 #     b. votes are sequential and
 #
-#
-#
 # Strategy:
 # 1. Split into votes for each title
-#     a. title_dict = {title: […{ip address: timestamp}…]}
+#     a. title_dict = {title:{
+#                         votes:        [[ip address,timestamp], ...],  <== Use len(title_dic['title']['votes'])
+#                         votes_by_ip:
+#
+#                            },
+#                        title:{},...}
 # 2. Total votes per title: title_dict[title].count()
-# 3. Add IP filter
-# 4. Add time filter
-
-
 
 import csv
 import datetime
@@ -31,6 +30,7 @@ def lookup(dic, key, *keys):
 csv_file = csv.DictReader(open("votes.csv"))
 vote_dict = {}
 for row in csv_file:
+    #it's a potential key because this algorithm gathers new titles as it goes along
     potential_key = row['\ufeff"YAVA Nominations"']
     if (vote_dict.get(potential_key) == None):
         new_dict = {}                           #
@@ -42,15 +42,22 @@ for row in csv_file:
         else:
             vote_dict[potential_key][row['User IP']] = vote_dict[potential_key][row['User IP']] + 1
 
+
+
+
+# print(vote_dict)
+
 ######Prints out total votes by different IP addresses#######
-# real_votes = 0
-# for book,ips in vote_dict.items():
-#     value = 0
-#     for key in ips.items():
-#         value = value+1
-#     real_votes = real_votes + value
-#     print(str(value) + ' => ' + str(book))
-# print('Real Votes => ' + str(real_votes))
+real_votes = 0
+for book,ips in vote_dict.items():
+    ipTotal = 0
+    voteTotal = 0
+    for key,number in ips.items():
+        ipTotal = ipTotal+1
+        voteTotal = voteTotal + number
+    print(str(book))
+    print(str(ipTotal) + ' IPs' + ', ' + str(voteTotal) + ' total votes')
+    print('----------------------------')
 
 
 
