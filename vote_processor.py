@@ -1,25 +1,5 @@
-# Scenarios to weed out:
-#
-# 1. Same person sits at one computer and spams the voting system
-#     a. Same IP address
-#     b. Same book
-#     c. time stamp within 2 minutes of the last
-# 2. One person goes to multiple computers, or uses IP vanish
-#     a. Same book
-#     b. votes are sequential and
-#
-# Strategy:
-# 1. Split into votes for each title
-#     a. title_dict = {title:{
-#                         votes:        [[ip address,timestamp], ...],  <== Use len(title_dic['title']['votes'])
-#                         votes_by_ip:
-#
-#                            },
-#                        title:{},...}
-# 2. Total votes per title: title_dict[title].count()
-
 import csv
-import datetime
+import datetime as dt
 
 def lookup(dic, key, *keys):
     if keys:
@@ -27,39 +7,56 @@ def lookup(dic, key, *keys):
     return dic.get(key)
 
 
+# datetime_object = datetime.strptime('Jun 1 2005  1:33PM', '%b %d %Y %I:%M%p')
+# datetime_object = dt.datetime.strptime('2018-03-02 01:05:03', '%Y-%m-%d %I:%M:%S')
+# datetime_object2 = dt.datetime.strptime('2018-03-02 01:06:03', '%Y-%m-%d %I:%M:%S')
+
+
+# mytime = datetime.datetime(2018, 3, 2, hour=1, minute=3, second=3, microsecond=0)
+# mytime2 = datetime.datetime(2018, 3, 2, hour=1, minute=5, second=3, microsecond=0)
+# print((datetime_object2-datetime_object).total_seconds())
+
+
 csv_file = csv.DictReader(open("votes.csv"))
-vote_dict = {}
+ip_vote_dict = {}
 for row in csv_file:
     #it's a potential key because this algorithm gathers new titles as it goes along
-    potential_key = row['\ufeff"YAVA Nominations"']
-    if (vote_dict.get(potential_key) == None):
-        new_dict = {}                           #
-        new_dict[row['User IP']] = 1            #
-        vote_dict[potential_key] = new_dict     #
+    potential_title = row['\ufeff"YAVA Nominations"']
+    if (ip_vote_dict.get(potential_title) == None):
+        new_dict = {}
+        new_dict[row['User IP']] = 1
+        ip_vote_dict[potential_title] = new_dict
     else:
-        if (lookup(vote_dict[potential_key], row['User IP']) == None):         #
-            vote_dict[potential_key][row['User IP']] = 1
+        if (lookup(ip_vote_dict[potential_title], row['User IP']) == None):
+            ip_vote_dict[potential_title][row['User IP']] = 1
         else:
-            vote_dict[potential_key][row['User IP']] = vote_dict[potential_key][row['User IP']] + 1
-
-
-
+            ip_vote_dict[potential_title][row['User IP']] = ip_vote_dict[potential_title][row['User IP']] + 1
 
 # print(vote_dict)
-
 ######Prints out total votes by different IP addresses#######
-real_votes = 0
-for book,ips in vote_dict.items():
-    ipTotal = 0
-    voteTotal = 0
-    for key,number in ips.items():
-        ipTotal = ipTotal+1
-        voteTotal = voteTotal + number
-    print(str(book))
-    print(str(ipTotal) + ' IPs' + ', ' + str(voteTotal) + ' total votes')
-    print('----------------------------')
+# for book,ips in ip_vote_dict.items():
+#     ipTotal = 0
+#     voteTotal = 0
+#     for key,number in ips.items():
+#         ipTotal = ipTotal+1
+#         voteTotal = voteTotal + number
+#     print(str(book))
+#     print(str(ipTotal) + ' IPs' + ', ' + str(voteTotal) + ' total votes')
+#     print('----------------------------')
 
+csv_file = csv.DictReader(open("votes.csv"))
+quick_vote_dict = {}
+beforestamp = None
+beforename = None
+for row in csv_file:
+    potential_title = row['\ufeff"YAVA Nominations"']
+    timestamp = dt.datetime.strptime(row['Entry Date'], '%Y-%m-%d %H:%M:%S')
+    if (quick_vote_dict.get(potential_title) == None):
+        quick_vote_dict[potential_title] = 0
+    if ((beforestamp is not None) and (beforename is not None)):
+        if ((abs((timestamp - beforestamp).total_seconds()) < tolerance) and (beforename == potential_title)):
+            quick_vote_dict[potential_title] = quick_vote_dict[potential_title] + 1
+    beforestamp = timestamp
+    beforename = potential_title
 
-
-# print(vote_dict['<u>Rest in Peace Rashawn Reloaded</u> by Ronnie Sidney, II'])
-# print(vote_dict['<u>The Inheritance</u> by Jennifer Ann Reed'])
+print(quick_vote_dict)
